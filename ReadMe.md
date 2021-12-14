@@ -1,8 +1,9 @@
 # fragar.io
 
 Implemented:
-- basic circle un-intersect
-- splitting / spawning
+- self collision
+- proper splitting / spawning
+- proper merging
 - mass
 - movement
 - jelly cell border
