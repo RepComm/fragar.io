@@ -19,6 +19,7 @@ export class Blob {
 
   mass: number;
   cachedRadius: number;
+  renderedRadius: number;
   resolution: number;
 
   jiggle: Array<number>;
@@ -46,6 +47,7 @@ export class Blob {
     this.jiggleSeed = Math.random()*20;
 
     this.cachedRadius = undefined;
+    this.renderedRadius = 0;
     this.refreshJiggle();
 
     this.playerMoveVector = new Vec2();
@@ -67,7 +69,7 @@ export class Blob {
   getMaxSpeed (): number {
     return (1/this.mass) * 10000;
   }
-  moveToward (f: Vec2): this {
+  passMove (f: Vec2): this {
     this.playerMoveVector
     .copy(this.position)
     .sub(f)
@@ -134,46 +136,53 @@ export class Blob {
     if (this.cachedRadius === undefined) {
       this.calculateCachedRadius();
     }
+    this.renderedRadius = lerp(this.renderedRadius, this.cachedRadius, 0.2);
 
     ctx.save();
     ctx.translate(this.position.x, this.position.y);
 
+    
     ctx.beginPath();
-
+    
     let rx = 0;
     let ry = 0;
     let theta = 0;
-
+    
     let radius = 0;
-
+    
+    
     for (let i=0; i<this.resolution; i++) {
-      radius = this.cachedRadius + this.jiggle[i];
+      // radius = this.cachedRadius + this.jiggle[i];
+      radius = this.renderedRadius + this.jiggle[i];
 
       theta = (i/this.resolution) * Math.PI * 2;
-
+      
       rx = Math.sin(theta) * radius;
       ry = Math.cos(theta) * radius;
-
+      
       if (i===0) {
         ctx.moveTo(rx, ry);
       } else {
         ctx.lineTo(rx, ry);
       }
     }
-
+    
     ctx.closePath();
     
     ctx.fillStyle = this.player.color;
-
+    
     ctx.fill();
-
+    
     ctx.lineWidth = 4;
     ctx.strokeStyle = "white";
-
+    
     ctx.stroke();
     
+    ctx.fillStyle = "white";
+    ctx.fillText(this.player.name, 0, 0);
+    
     ctx.restore();
-
+    
     // arrow(ctx, this.position, this.velocity, 100);
   }
   merge (other: Blob): this {

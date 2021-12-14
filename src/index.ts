@@ -1,11 +1,11 @@
 import { Drawing, EXPONENT_CSS_BODY_STYLES, EXPONENT_CSS_STYLES, Panel } from "@repcomm/exponent-ts";
 import { GameInput } from "@repcomm/gameinput-ts";
 import { Vec2 } from "@repcomm/vec2d";
-import { Blob } from "./blob";
 import { Food } from "./food";
 import { random, smoothNoise } from "./math";
 import { Player } from "./player";
 import { Timer } from "./timer";
+import { arrow } from "./helpers";
 
 EXPONENT_CSS_BODY_STYLES.mount(document.head);
 EXPONENT_CSS_STYLES.mount(document.head);
@@ -15,11 +15,6 @@ async function main() {
   .setId("container")
   .mount(document.body);
 
-  let bDistOther = 0;
-  let overlapAmount = 0;
-  let bDirOther = new Vec2();
-  let bMove = new Vec2();
-
   const renderer = new Drawing({desynchronized: true, alpha: false})
   .setId("canvas")
   .setHandlesResize(true)
@@ -27,57 +22,19 @@ async function main() {
     Food.render(ctx);
     for (let p of Player.all) {      
       for (let b of p.blobs) {
+        //run merging code
+        p.passMerge(b);
+
+        //eat food
         Food.consume(b);
+
+        //draw blob
         b.render(ctx);
 
-        b.moveToward(p.focus);
+        if (p.debugDraw) arrow(ctx, b.position, b.velocity, 50, "yellow");
 
-        for (let other of p.blobs) {
-          if (other === b) continue;
-
-          if (
-            b.isMergable// && other.isMergable
-          ) {
-            if (b.position.distance(other.position) < Blob.MIN_MERGE_DISTANCE) {
-              b.merge(other);
-            }
-            continue;
-          }
-
-          bDistOther = b.position.distance(other.position);
-          
-          overlapAmount = (b.cachedRadius + other.cachedRadius) - bDistOther;
-
-          if (overlapAmount > 0) {
-            
-            //fix b position
-            bDirOther
-            .copy(b.position)
-            .sub(other.position)
-            .normalize();
-
-            
-            bMove
-            .copy(bDirOther)
-            .mulScalar(overlapAmount / 2);
-            
-            b.position.add(bMove);
-
-            // arrow(ctx, b.position, bDirOther, 50, "yellow");
-
-            //fix other position
-            bDirOther
-            .copy(other.position)
-            .sub(b.position)
-            .normalize();
-
-            bMove
-            .copy(bDirOther)
-            .mulScalar(overlapAmount / 2);
-
-            other.position.add(bMove);
-          }
-        }
+        //run movement code
+        b.passMove(p.focus);
 
         b.update();
       }
@@ -178,3 +135,4 @@ async function main() {
   });
 }
 main();
+

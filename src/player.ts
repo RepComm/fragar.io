@@ -8,6 +8,13 @@ export interface PlayerCreateOptions {
   isLocal: boolean;
 }
 
+
+let bDistOther = 0;
+let overlapAmount = 0;
+let bDirOther = new Vec2();
+let bMove = new Vec2();
+let combinedRadiuses: number = 0;
+
 export class Player implements PlayerCreateOptions {
   static all: Set<Player>;
   static MAX_BLOBS: number;
@@ -22,6 +29,8 @@ export class Player implements PlayerCreateOptions {
   addVelocity: Vec2;
   spawnPosition: Vec2;
 
+  debugDraw: boolean;
+
   constructor(opts: PlayerCreateOptions) {
     this.blobs = new Set();
     this.name = opts.name;
@@ -31,6 +40,8 @@ export class Player implements PlayerCreateOptions {
     this.focus = new Vec2();
     this.addVelocity = new Vec2();
     this.spawnPosition = new Vec2();
+
+    this.debugDraw = true;
 
     Player.all.add(this);
   }
@@ -110,7 +121,60 @@ export class Player implements PlayerCreateOptions {
       }
     }
   }
+  /**code that provides merging*/
+  passMerge (b: Blob) {
+    for (let other of this.blobs) {
+      //no self merging
+      if (other === b) continue;
+
+      bDistOther = b.position.distance(other.position);
+      combinedRadiuses = b.cachedRadius + other.cachedRadius;
+
+      if (
+        b.isMergable// && other.isMergable
+      ) {
+        if (bDistOther < combinedRadiuses/2) {
+          b.merge(other);
+        }
+        continue;
+      }
+
+      overlapAmount = combinedRadiuses - bDistOther;
+
+      if (overlapAmount > 0) {
+        
+        //fix b position
+        bDirOther
+        .copy(b.position)
+        .sub(other.position)
+        .normalize();
+
+        
+        bMove
+        .copy(bDirOther)
+        .mulScalar(overlapAmount / 2);
+        
+        b.position.add(bMove);
+
+        //fix other position
+        bDirOther
+        .copy(other.position)
+        .sub(b.position)
+        .normalize();
+
+        bMove
+        .copy(bDirOther)
+        .mulScalar(overlapAmount / 2);
+
+        other.position.add(bMove);
+      }
+    }
+  }
 }
 
 Player.all = new Set();
 Player.MAX_BLOBS = 16;
+function arrow(ctx: any, position: Vec2, bDirOther: Vec2, arg3: number, arg4: string) {
+  throw new Error("Function not implemented.");
+}
+
