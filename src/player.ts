@@ -19,6 +19,9 @@ export class Player implements PlayerCreateOptions {
 
   focus: Vec2;
 
+  addVelocity: Vec2;
+  spawnPosition: Vec2;
+
   constructor(opts: PlayerCreateOptions) {
     this.blobs = new Set();
     this.name = opts.name;
@@ -26,6 +29,8 @@ export class Player implements PlayerCreateOptions {
     this.color = opts.color;
 
     this.focus = new Vec2();
+    this.addVelocity = new Vec2();
+    this.spawnPosition = new Vec2();
 
     Player.all.add(this);
   }
@@ -59,15 +64,40 @@ export class Player implements PlayerCreateOptions {
     return this;
   }
   split(...bs: Blob[]) {
+    if (bs.length === 1) {
+      bs[0].timeSpawn = Date.now();
+    }
     for (let b of bs) {
       let hm = b.mass / 2;
       b.subMass(hm);
+      // b.velocity.mulScalar(2);
 
       let nb = this.spawn();
       nb.setMass(hm);
-      nb.position.copy(b.position);
-      // nb.position.x += 200;
-      // nb.position.y += 200;
+      nb.velocity.copy(b.velocity);
+
+      this.addVelocity
+      .copy(this.focus)
+      .sub(b.position)
+      .normalize()
+      .mulScalar(40);
+
+      nb.velocity.add(this.addVelocity);
+      // b.velocity.copy(nb.velocity);
+
+      nb.calculateCachedRadius();
+      b.calculateCachedRadius();
+
+      this.spawnPosition
+      .copy(this.focus)
+      .sub(b.position)
+      .normalize()
+      .mulScalar((nb.cachedRadius + b.cachedRadius) * 1.1)
+      .add(b.position);
+
+
+      nb.position.copy(this.spawnPosition);
+      
     }
   }
   trySplit() {

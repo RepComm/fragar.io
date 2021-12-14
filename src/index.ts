@@ -5,6 +5,7 @@ import { arrow } from "./helpers";
 import { smoothNoise } from "./math";
 import { Player } from "./player";
 import { Timer } from "./timer";
+import { Blob } from "./blob";
 
 EXPONENT_CSS_BODY_STYLES.mount(document.head);
 EXPONENT_CSS_STYLES.mount(document.head);
@@ -31,6 +32,16 @@ async function main() {
 
         for (let other of p.blobs) {
           if (other === b) continue;
+
+          if (
+            b.isMergable// && other.isMergable
+          ) {
+            if (b.position.distance(other.position) < Blob.MIN_MERGE_DISTANCE) {
+              b.merge(other);
+            }
+            continue;
+          }
+
           bDistOther = b.position.distance(other.position);
           
           overlapAmount = (b.cachedRadius + other.cachedRadius) - bDistOther;
@@ -50,8 +61,7 @@ async function main() {
             
             b.position.add(bMove);
 
-            arrow(ctx, b.position, bDirOther, 50, "yellow");
-
+            // arrow(ctx, b.position, bDirOther, 50, "yellow");
 
             //fix other position
             bDirOther
