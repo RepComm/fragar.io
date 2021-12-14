@@ -1,14 +1,9 @@
 
 import { Vec2 } from "@repcomm/vec2d";
 import { lerp } from "@repcomm/vec2d/lib/vec";
-import { arrow } from "./helpers";
-import { smoothNoise } from "./math";
+import { areaToRadius, smoothNoise } from "./math";
 import { Player } from "./player";
 
-//r = √(A / π)
-const areaToRadius = (area: number): number => {
-  return Math.sqrt(area / Math.PI);
-}
 
 export class Blob {
   static MIN_SIZE: number;

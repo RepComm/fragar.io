@@ -1,11 +1,11 @@
 import { Drawing, EXPONENT_CSS_BODY_STYLES, EXPONENT_CSS_STYLES, Panel } from "@repcomm/exponent-ts";
 import { GameInput } from "@repcomm/gameinput-ts";
 import { Vec2 } from "@repcomm/vec2d";
-import { arrow } from "./helpers";
-import { smoothNoise } from "./math";
+import { Blob } from "./blob";
+import { Food } from "./food";
+import { random, smoothNoise } from "./math";
 import { Player } from "./player";
 import { Timer } from "./timer";
-import { Blob } from "./blob";
 
 EXPONENT_CSS_BODY_STYLES.mount(document.head);
 EXPONENT_CSS_STYLES.mount(document.head);
@@ -24,8 +24,10 @@ async function main() {
   .setId("canvas")
   .setHandlesResize(true)
   .addRenderPass((ctx)=>{
+    Food.render(ctx);
     for (let p of Player.all) {      
       for (let b of p.blobs) {
+        Food.consume(b);
         b.render(ctx);
 
         b.moveToward(p.focus);
@@ -105,11 +107,6 @@ async function main() {
     mouseButtons:[0]
   });
 
-  const random = {
-    byte: ()=>Math.floor(Math.random() * 255),
-    color: ()=>`rgb(${random.byte()},${random.byte()},${random.byte()})`
-  };
-
   let localPlayer = new Player({
     color: random.color(),
     isLocal: true,
@@ -170,6 +167,14 @@ async function main() {
         b.refreshJiggle();
       }
     }
+  });
+
+  let min = new Vec2();
+  let max = new Vec2();
+
+  timer.listen(1/4, ()=>{
+    max.set(renderer.width, renderer.height);
+    Food.spawnRect(min, max, 10);
   });
 }
 main();

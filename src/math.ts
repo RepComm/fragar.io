@@ -51,3 +51,12 @@ export function smoothNoise (t: number): number {
   return lerp(rf, rc, Math.cos((t - f) * Math.PI) );
 }
 
+export const random = {
+  byte: ()=>Math.floor(Math.random() * 255),
+  color: ()=>`rgb(${random.byte()},${random.byte()},${random.byte()})`
+};
+
+//r = √(A / π)
+export const areaToRadius = (area: number): number => {
+  return Math.sqrt(area / Math.PI);
+}
