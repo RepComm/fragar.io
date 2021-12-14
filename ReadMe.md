@@ -1,4 +1,8 @@
-# webpack-ts-template
+# fragar.io
 
-A template that uses webpack configured with babel / typescript<br/>
-to compile for the browser
+Implemented:
+- basic circle un-intersect
+- splitting / spawning
+- mass
+- movement
+- jelly cell border
