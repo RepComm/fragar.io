@@ -7,3 +7,5 @@ Implemented:
 - mass
 - movement
 - jelly cell border
+
+![img](./example.png)
