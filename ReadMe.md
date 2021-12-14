@@ -21,3 +21,6 @@ Implemented:
 - serve ./docs/ directory from a http(s) server
 - Open the hosted site in your browser
 
+## Controls
+Split - double click/tap, or single spacebar
+Move - move cursor, drag touch, or tap touch destination
