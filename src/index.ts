@@ -100,6 +100,11 @@ async function main() {
     keys: [" "]
   });
 
+  input.getOrCreateButton("split-alt")
+  .addInfluence({
+    mouseButtons:[0]
+  });
+
   const random = {
     byte: ()=>Math.floor(Math.random() * 255),
     color: ()=>`rgb(${random.byte()},${random.byte()},${random.byte()})`
@@ -121,11 +126,40 @@ async function main() {
   const timer = new Timer();
   timer.start(120);
 
+  let timeLastSplit = 0;
+  let timeEnlapsedSplit = 0;
+  let timeMinSplit = 1000;
+  let tapCount = 0;
+  let tapDown = false;
+  let timeTapCountReset = 500;
+
   timer.listen(30, (enlapsed)=>{
     localPlayer.setFocus(
       input.raw.getPointerX(),
       input.raw.getPointerY()
     );
+
+    timeEnlapsedSplit = Date.now() - timeLastSplit;
+    if (timeEnlapsedSplit > timeMinSplit) {
+      if (input.getButtonValue("split")) {
+        localPlayer.trySplit();
+        timeLastSplit = Date.now();
+      } else if (input.getButtonValue("split-alt")) {
+        if (!tapDown) tapCount ++;
+        tapDown = true;
+        setTimeout(()=>{
+          tapCount = 0;
+        }, timeTapCountReset);
+      } else {
+        tapDown = false;
+      }
+      if (tapCount > 1) {
+        localPlayer.trySplit();
+        tapCount = 0;
+        timeLastSplit = Date.now();
+      }
+    }
+
 
     renderer.setNeedsRedraw(true);
   });
@@ -135,9 +169,6 @@ async function main() {
       for (let b of p.blobs) {
         b.refreshJiggle();
       }
-    }
-    if (input.getButtonValue("split")) {
-      localPlayer.trySplit();
     }
   });
 }
