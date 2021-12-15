@@ -6,6 +6,8 @@ import { random, smoothNoise } from "./math";
 import { Player } from "./player";
 import { Timer } from "./timer";
 import { arrow } from "./helpers";
+import { Blob } from "./blob";
+import { Popper } from "./popper";
 
 EXPONENT_CSS_BODY_STYLES.mount(document.head);
 EXPONENT_CSS_STYLES.mount(document.head);
@@ -15,11 +17,14 @@ async function main() {
   .setId("container")
   .mount(document.body);
 
+  let debugDraw = false;
+
   const renderer = new Drawing({desynchronized: true, alpha: false})
   .setId("canvas")
   .setHandlesResize(true)
   .addRenderPass((ctx)=>{
     Food.render(ctx);
+
     for (let p of Player.all) {      
       for (let b of p.blobs) {
         //run merging code
@@ -27,11 +32,12 @@ async function main() {
 
         //eat food
         Food.consume(b);
+        Popper.pop(b);
 
         //draw blob
         b.render(ctx);
 
-        if (p.debugDraw) arrow(ctx, b.position, b.velocity, 50, "yellow");
+        if (debugDraw) arrow(ctx, b.position, b.velocity, 50, "yellow");
 
         //run movement code
         b.passMove(p.focus);
@@ -39,6 +45,8 @@ async function main() {
         b.update();
       }
     }
+
+    Popper.render(ctx);
   })
   .mount(container);
 
@@ -64,6 +72,12 @@ async function main() {
     mouseButtons:[0]
   });
 
+  input.getOrCreateButton("feed")
+  .addInfluence({
+    keys: ["w"],
+    mouseButtons: [1]
+  });
+
   let localPlayer = new Player({
     color: random.color(),
     isLocal: true,
@@ -72,7 +86,8 @@ async function main() {
 
   localPlayer
   .spawn()
-  .setMass(32000)
+  // .setMass(Blob.MIN_MASS)
+  .setMass(Blob.MIN_MASS*10)
   .position.set(100, 100);
 
   window["smoothNoise"] = smoothNoise;
@@ -114,6 +129,9 @@ async function main() {
       }
     }
 
+    if (input.getButtonValue("feed")) {
+      localPlayer.tryFeed();
+    }
 
     renderer.setNeedsRedraw(true);
   });
@@ -129,9 +147,19 @@ async function main() {
   let min = new Vec2();
   let max = new Vec2();
 
-  timer.listen(1/4, ()=>{
+  timer.listen(1/8, ()=>{
+    Popper.spawnRect(min, max, 2);
+  });
+
+  timer.listen(1, ()=>{
     max.set(renderer.width, renderer.height);
-    Food.spawnRect(min, max, 10);
+    Food.spawnRect(min, max, 4);
+
+    for (let p of Player.all) {
+      for (let b of p.blobs) {
+        b.subMass(b.mass/300);
+      }
+    }
   });
 }
 main();

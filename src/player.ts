@@ -1,6 +1,8 @@
 
 import { Vec2 } from "@repcomm/vec2d";
 import { Blob } from "./blob";
+import { Food } from "./food";
+import { areaToRadius } from "./math";
 
 export interface PlayerCreateOptions {
   color: string;
@@ -29,8 +31,6 @@ export class Player implements PlayerCreateOptions {
   addVelocity: Vec2;
   spawnPosition: Vec2;
 
-  debugDraw: boolean;
-
   constructor(opts: PlayerCreateOptions) {
     this.blobs = new Set();
     this.name = opts.name;
@@ -41,9 +41,10 @@ export class Player implements PlayerCreateOptions {
     this.addVelocity = new Vec2();
     this.spawnPosition = new Vec2();
 
-    this.debugDraw = true;
-
     Player.all.add(this);
+  }
+  get canSplit (): boolean {
+    return this.blobs.size < Player.MAX_BLOBS;
   }
   getCenter(out: Vec2) {
     out.set(0, 0);
@@ -63,7 +64,7 @@ export class Player implements PlayerCreateOptions {
   getSplitCandidates(): Blob[] {
     let result: Blob[] = undefined;
     for (let b of this.blobs) {
-      if (b.mass > Blob.MIN_SIZE * Blob.MIN_SPLIT_MULTIPLIER) {
+      if (b.canSplit) {
         if (result === undefined) result = [];
         result.push(b);
       }
@@ -103,7 +104,7 @@ export class Player implements PlayerCreateOptions {
       .copy(this.focus)
       .sub(b.position)
       .normalize()
-      .mulScalar((nb.cachedRadius + b.cachedRadius) * 1.1)
+      .mulScalar((nb.cachedRadius + b.cachedRadius))
       .add(b.position);
 
 
@@ -118,6 +119,36 @@ export class Player implements PlayerCreateOptions {
         this.split(...candidate);
       } else {
         return;
+      }
+    }
+  }
+  tryFeed () {
+    let feed: Food;
+    for (let b of this.blobs) {
+      if (b.mass > Blob.MIN_MASS + Blob.FEED_MASS) {
+        
+        b.subMass(Blob.FEED_MASS);
+
+        b.calculateCachedRadius();
+
+        this.spawnPosition
+        .copy(this.focus)
+        .sub(b.position)
+        .normalize()
+        .mulScalar( areaToRadius(Blob.FEED_MASS) + b.cachedRadius )
+        .add(b.position);
+        
+        this.addVelocity
+        .copy(this.focus)
+        .sub(b.position)
+        .normalize()
+        .mulScalar(40);
+
+        feed = Food.spawn(this.spawnPosition);
+        feed.color = b.player.color;
+        feed.setMass(Blob.FEED_MASS);
+
+        feed.velocity.add(this.addVelocity);
       }
     }
   }
@@ -174,7 +205,3 @@ export class Player implements PlayerCreateOptions {
 
 Player.all = new Set();
 Player.MAX_BLOBS = 16;
-function arrow(ctx: any, position: Vec2, bDirOther: Vec2, arg3: number, arg4: string) {
-  throw new Error("Function not implemented.");
-}
-

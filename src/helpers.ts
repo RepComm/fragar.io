@@ -11,5 +11,3 @@ export function arrow (ctx: CanvasRenderingContext2D, center: Vec2, dir: Vec2, s
   ctx.stroke();
   ctx.restore();
 }
-
-

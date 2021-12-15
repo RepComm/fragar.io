@@ -3,21 +3,17 @@ import { Vec2 } from "@repcomm/vec2d";
 import { lerp } from "@repcomm/vec2d/lib/vec";
 import { areaToRadius, smoothNoise } from "./math";
 import { Player } from "./player";
+import { Body } from "./body";
 
-
-export class Blob {
-  static MIN_SIZE: number;
+export class Blob extends Body {
+  static MIN_MASS: number;
+  static FEED_MASS: number;
   static MIN_SPLIT_MULTIPLIER: number;
   static MIN_MERGE_TIME: number;
   static MIN_MERGE_DISTANCE: number;
 
   player: Player;
   
-  position: Vec2;
-
-  velocity: Vec2;
-
-  mass: number;
   cachedRadius: number;
   renderedRadius: number;
   resolution: number;
@@ -30,14 +26,17 @@ export class Blob {
 
   timeSpawn: number;
 
+  fontSize: number;
+  fontFamily: string;
+
   constructor (player: Player) {
+    super();
+
+    this.mass = Blob.MIN_MASS;
+
     this.timeSpawn = Date.now();
     this.player = player;
     
-    this.position = new Vec2();
-    this.velocity = new Vec2();
-
-    this.mass = 1;
     this.resolution = 64;
     this.jiggle = new Array(this.resolution);
     this.jiggle.fill(0);
@@ -51,11 +50,14 @@ export class Blob {
     this.refreshJiggle();
 
     this.playerMoveVector = new Vec2();
+
+    this.fontFamily = "courier";
+    this.fontSize = 12;
   }
-  update () {
+  update (delta: number = 1) {
     let dist = this.position.distance(this.player.focus);
 
-    if (dist < 2) {
+    if (dist < 5) {
       this.playerMoveVector.copy(this.player.focus);
     } else {
       this.playerMoveVector.lerp(
@@ -63,8 +65,8 @@ export class Blob {
         this.getMaxSpeed() * (1/dist)
       );
     }
-    this.position.add(this.velocity);
-    this.velocity.mulScalar(0.8);
+
+    super.update(delta);
   }
   getMaxSpeed (): number {
     return (1/this.mass) * 10000;
@@ -75,6 +77,17 @@ export class Blob {
     .sub(f)
     .normalize()
     .mulScalar(this.getMaxSpeed());
+    if (
+      isNaN(this.playerMoveVector.x) &&
+      isNaN(this.playerMoveVector.y)
+      ) {
+      console.log(
+        "move", this.playerMoveVector,
+        "pos", this.position,
+        "speed", this.getMaxSpeed()
+      );
+      throw `NaN`;
+    }
 
     this.velocity.sub(this.playerMoveVector);
 
@@ -92,18 +105,17 @@ export class Blob {
     );
   }
   setMass (m: number): this {
+    if (m < Blob.MIN_MASS) return;
     this.mass = m;
     this.cachedRadius = undefined;
     return this;
   }
   addMass (m: number): this {
-    this.mass += m;
-    this.cachedRadius = undefined;
+    this.setMass(m + this.mass);
     return this;
   }
   subMass (m: number): this {
-    this.mass -= m;
-    this.cachedRadius = undefined;
+    this.setMass(this.mass - m);
     return this;
   }
   refreshJiggle () {
@@ -139,8 +151,8 @@ export class Blob {
     this.renderedRadius = lerp(this.renderedRadius, this.cachedRadius, 0.2);
 
     ctx.save();
+    ctx.font = `${this.fontSize}px ${this.fontFamily}`;
     ctx.translate(this.position.x, this.position.y);
-
     
     ctx.beginPath();
     
@@ -181,6 +193,8 @@ export class Blob {
     ctx.fillStyle = "white";
     ctx.fillText(this.player.name, 0, 0);
     
+    ctx.fillText(this.mass.toFixed(0), 0, this.fontSize);
+
     ctx.restore();
     
     // arrow(ctx, this.position, this.velocity, 100);
@@ -192,8 +206,15 @@ export class Blob {
     this.player.blobs.delete(other);
     return this;
   }
+  get canSplit (): boolean {
+    return (
+      this.mass   > Blob.MIN_MASS * Blob.MIN_SPLIT_MULTIPLIER
+    );
+  }
 }
-Blob.MIN_SIZE = 1000;
+
+Blob.MIN_MASS = 1000;
+Blob.FEED_MASS = 400;
 Blob.MIN_SPLIT_MULTIPLIER = 2.1;
 Blob.MIN_MERGE_TIME = 5000;
 Blob.MIN_MERGE_DISTANCE = 20;

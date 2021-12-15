@@ -2,8 +2,9 @@
 import { Vec2 } from "@repcomm/vec2d";
 import { areaToRadius, lerp, random } from "./math";
 import { Blob } from "./blob";
+import { Body } from "./body";
 
-export class Food {
+export class Food extends Body {
   static all: Set<Food>;
   static unused: Array<Food>;
   static currentSelection: Set<Food>;
@@ -11,23 +12,30 @@ export class Food {
 
   static spawnPosition: Vec2;
 
-  position: Vec2;
   color: string;
-  mass: number;
   radius: number;
 
   constructor () {
+    super();
+
+    this.init();
+  }
+  init () {
     this.color = random.color();
-    this.position = new Vec2();
-    this.mass = Math.floor(Math.random()*Food.MAX_MASS);
+    this.mass = Math.floor(Math.random() * Food.MAX_MASS);
     this.radius = areaToRadius(this.mass);
+    this.velocity.set(0,0);
   }
   static getUnused (): Food {
+    let result: Food;
+
     if (Food.unused.length < 1) {
-      return new Food();
+      result = new Food();
     } else {
-      return Food.unused.pop();
+      result = Food.unused.pop();
+      result.init(); //reinitialize to remove previous values
     }
+    return result;
   }
   static spawn (pos?: Vec2): Food {
     let f = Food.getUnused();
@@ -44,6 +52,7 @@ export class Food {
   }
   static render (ctx: CanvasRenderingContext2D) {
     for (let f of Food.all) {
+      f.update();
       ctx.save();
 
       ctx.beginPath();
