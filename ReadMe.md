@@ -2,11 +2,15 @@
 
 Implemented:
 - self collision
-- proper splitting / spawning
-- proper merging
+- splitting
+- merging
 - mass
 - movement
-- jelly cell border
+- physics bodies
+- jelly blob rendering
+- popper blobs
+- feeding
+- food
 
 ![img](./example.png)
 
@@ -24,3 +28,4 @@ Implemented:
 ## Controls
 Split - double click/tap, or single spacebar
 Move - move cursor, drag touch, or tap touch destination
+Feed - w or right click / hold tap
